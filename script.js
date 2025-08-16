@@ -39,6 +39,14 @@ const TYPES = [
   "flying","psychic","bug","rock","ghost","dragon","dark","steel","fairy"
 ];
 
+const TYPES_ES = {
+  normal: "Normal", fire: "Fuego", water: "Agua", electric: "Eléctrico",
+  grass: "Planta", ice: "Hielo", fighting: "Lucha", poison: "Veneno",
+  ground: "Tierra", flying: "Volador", psychic: "Psíquico", bug: "Bicho",
+  rock: "Roca", ghost: "Fantasma", dragon: "Dragón", dark: "Siniestro",
+  steel: "Acero", fairy: "Hada"
+};
+
 const GENERATIONS = {
   1: { start: 1,   end: 151, name: "Kanto" },
   2: { start: 152, end: 251, name: "Johto" },
@@ -51,8 +59,8 @@ const GENERATIONS = {
 
 const state = {
   search: "",
-  type: "",        // one active type (como en la referencia)
-  gen: "",         // "", "1"... "7"
+  type: "",
+  gen: "",
   sort: "id",
 };
 
@@ -60,17 +68,16 @@ const state = {
 init();
 
 async function init() {
-  await loadIndex();          // lista de nombres/ids (rápida)
+  await loadIndex();
   renderTypeButtons();
   attachEvents();
-  applyFilters();             // primer render
+  applyFilters();
 }
 
-// Obtener índice completo de pokemon (solo nombre + url -> id)
+// =================== LOAD INDEX ===================
 async function loadIndex() {
-  // Primero obtener count para pedir todo de una
   const info = await fetch(`${API}/pokemon?limit=1`).then(r => r.json());
-  const total = info.count; // ~ 1300+, pero muchos son forms; limitaremos a 1..1010 si prefieres
+  const total = info.count;
 
   const res = await fetch(`${API}/pokemon?limit=${total}`);
   const data = await res.json();
@@ -78,7 +85,7 @@ async function loadIndex() {
   allIndex = data.results.map(r => {
     const id = Number(r.url.split("/").filter(Boolean).pop());
     return { id, name: r.name, url: r.url };
-  }).filter(p => p.id <= 809); // nos quedamos hasta Gen 7 (imagen de referencia)
+  }).filter(p => p.id <= 809);
   ui.totalCount.textContent = allIndex.length.toString();
 }
 
@@ -95,67 +102,51 @@ function badgeForType(t) {
 }
 
 function cardSkeleton() {
-  return `
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-md p-5 h-[290px] animate-pulse"></div>
-  `;
+  return `<div class="bg-white rounded-2xl border border-slate-200 shadow-md p-5 h-[290px] animate-pulse"></div>`;
 }
 
-// Botones de tipo (exclusivos como la imagen)
+function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+
 function renderTypeButtons() {
   ui.typeBox.innerHTML = "";
   TYPES.forEach(type => {
     const b = document.createElement("button");
-    b.textContent = capitalize(type);
+    b.textContent = TYPES_ES[type] || capitalize(type);
     b.dataset.type = type;
-    b.className = "px-3 py-1.5 rounded-xl border-2 shadow-sm text-sm " +
-      "border-slate-300 hover:bg-slate-50";
+    b.className = "px-3 py-1.5 rounded-xl border-2 shadow-sm text-sm border-slate-300 hover:bg-slate-50";
     b.addEventListener("click", () => {
       if (state.type === type) state.type = "";
       else state.type = type;
-      // estilos activos
-      ui.typeBox.querySelectorAll("button").forEach(btn => {
-        btn.classList.remove("border-blue-400","bg-blue-50","text-blue-700");
-      });
-      if (state.type) {
-        b.classList.add("border-blue-400","bg-blue-50","text-blue-700");
-      }
+      ui.typeBox.querySelectorAll("button").forEach(btn => btn.classList.remove("border-blue-400","bg-blue-50","text-blue-700"));
+      if (state.type) b.classList.add("border-blue-400","bg-blue-50","text-blue-700");
       applyFilters();
     });
     ui.typeBox.appendChild(b);
   });
 }
 
-function capitalize(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
-
 // =================== FILTER PIPELINE ===================
 async function applyFilters() {
-  // 1) base = por generación o todos
   let base = genUniverse(state.gen);
 
-  // 2) por nombre (sobre índice)
   if (state.search.trim()) {
     const s = state.search.trim().toLowerCase();
     base = base.filter(p => p.name.includes(s));
   }
 
-  // 3) por tipo (usar endpoint /type y quedarnos con ids de esa gen/base)
   if (state.type) {
-    const set = await getIdsForType(state.type); // Set<number>
+    const set = await getIdsForType(state.type);
     base = base.filter(p => set.has(p.id));
   }
 
   filteredList = base;
-
-  // 4) Orden
   await sortFiltered(state.sort);
 
-  // 5) Render página 1
   currentPage = 1;
   renderPage();
 
-  // Stats
   ui.stats.results.textContent = filteredList.length.toString();
-  ui.stats.type.textContent = state.type ? capitalize(state.type) : "—";
+  ui.stats.type.textContent = state.type ? TYPES_ES[state.type] : "—";
   ui.stats.gen.textContent = state.gen ? `${state.gen} (${GENERATIONS[state.gen].name})` : "Todas";
   ui.stats.order.textContent = displayOrder(state.sort);
 }
@@ -167,7 +158,7 @@ function genUniverse(genVal) {
 }
 
 function displayOrder(key){
-  switch (key) {
+  switch (key){
     case "id": return "ID";
     case "name": return "Nombre";
     case "height": return "Altura";
@@ -176,94 +167,74 @@ function displayOrder(key){
   }
 }
 
-// Ordenar (si es altura/peso, aseguramos datos de los elementos a ordenar)
-async function sortFiltered(criteria) {
-  if (criteria === "id") {
-    filteredList.sort((a,b)=>a.id-b.id);
-    return;
-  }
-  if (criteria === "name") {
-    filteredList.sort((a,b)=>a.name.localeCompare(b.name));
-    return;
-  }
-  // Altura / Peso – obtenemos detalles en lotes para todo el conjunto filtrado (cacheado)
+async function sortFiltered(criteria){
+  if(criteria==="id"){ filteredList.sort((a,b)=>a.id-b.id); return; }
+  if(criteria==="name"){ filteredList.sort((a,b)=>a.name.localeCompare(b.name)); return; }
   await ensureDetailsFor(filteredList.map(p=>p.id));
   filteredList.sort((a,b)=>{
     const A = cacheDetails.get(a.id);
     const B = cacheDetails.get(b.id);
-    if (!A || !B) return 0;
-    if (criteria === "height") return A.height - B.height;
-    if (criteria === "weight") return A.weight - B.weight;
+    if(!A||!B) return 0;
+    if(criteria==="height") return A.height-B.height;
+    if(criteria==="weight") return A.weight-B.weight;
     return 0;
   });
 }
 
-// Devuelve Set de IDs para un tipo (cacheado)
-async function getIdsForType(type) {
-  if (cacheTypeSets.has(type)) return cacheTypeSets.get(type);
+async function getIdsForType(type){
+  if(cacheTypeSets.has(type)) return cacheTypeSets.get(type);
   const data = await fetch(`${API}/type/${type}`).then(r=>r.json());
-  const ids = new Set(
-    data.pokemon
-      .map(p => Number(p.pokemon.url.split("/").filter(Boolean).pop()))
-      .filter(id => id <= 809) // quedarnos hasta Gen 7
-  );
-  cacheTypeSets.set(type, ids);
+  const ids = new Set(data.pokemon.map(p=>Number(p.pokemon.url.split("/").filter(Boolean).pop())).filter(id=>id<=809));
+  cacheTypeSets.set(type,ids);
   return ids;
 }
 
 // =================== RENDER ===================
-async function renderPage() {
+async function renderPage(){
   ui.grid.innerHTML = "";
   ui.empty.classList.add("hidden");
   ui.loading.classList.remove("hidden");
 
   const totalPages = Math.max(1, Math.ceil(filteredList.length / PER_PAGE));
-  const start = (currentPage - 1) * PER_PAGE;
-  const pageSlice = filteredList.slice(start, start + PER_PAGE);
+  const start = (currentPage-1)*PER_PAGE;
+  const pageSlice = filteredList.slice(start, start+PER_PAGE);
 
-  // pre-render skeletons
-  ui.grid.innerHTML = pageSlice.map(() => cardSkeleton()).join("");
+  ui.grid.innerHTML = pageSlice.map(()=>cardSkeleton()).join("");
 
-  // asegurar detalles para esta página
   await ensureDetailsFor(pageSlice.map(p=>p.id));
 
-  // render real
   ui.grid.innerHTML = "";
-  pageSlice.forEach(p => {
+  pageSlice.forEach(p=>{
     const d = cacheDetails.get(p.id);
-    if (!d) return; // fallback
+    if(!d) return;
     ui.grid.appendChild(pokemonCard(d));
   });
 
-  // paginación
   ui.pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
   ui.pageBadge.textContent = `${currentPage}`;
-  ui.prev.disabled = currentPage <= 1;
-  ui.next.disabled = currentPage >= totalPages;
+  ui.prev.disabled = currentPage<=1;
+  ui.next.disabled = currentPage>=totalPages;
 
   ui.loading.classList.add("hidden");
-  if (pageSlice.length === 0) ui.empty.classList.remove("hidden");
+  if(pageSlice.length===0) ui.empty.classList.remove("hidden");
 }
 
-function pokemonCard(p) {
+function pokemonCard(p){
   const div = document.createElement("div");
-  div.className =
-    "bg-white rounded-2xl border border-slate-200 shadow-md p-5 transition " +
-    "hover:-translate-y-1.5 hover:shadow-lg cursor-pointer";
+  div.className = "bg-white rounded-2xl border border-slate-200 shadow-md p-5 transition hover:-translate-y-1.5 hover:shadow-lg cursor-pointer";
   const types = p.types.map(t=>t.type.name);
 
   div.innerHTML = `
     <div class="flex items-center justify-between mb-2">
       <span class="text-slate-500 text-sm">#${String(p.id).padStart(3,"0")}</span>
       <div class="flex gap-2">
-        ${types.map(t=>`<span class="${badgeForType(t)}">${capitalize(t)}</span>`).join("")}
+        ${types.map(t=>`<span class="${badgeForType(t)}">${TYPES_ES[t]||capitalize(t)}</span>`).join("")}
       </div>
     </div>
     <div class="h-32 flex items-center justify-center">
-      <img class="h-28 object-contain" src="${p.sprites.other?.['official-artwork']?.front_default || p.sprites.front_default}" alt="${p.name}">
+      <img class="h-28 object-contain" src="${p.sprites.other?.['official-artwork']?.front_default||p.sprites.front_default}" alt="${p.name}">
     </div>
     <h3 class="text-center mt-2 text-lg font-extrabold text-slate-800 capitalize">${p.name}</h3>
-
     <div class="grid grid-cols-2 gap-3 mt-4">
       <div class="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-center">
         <div class="text-xs text-slate-500">Altura</div>
@@ -274,28 +245,22 @@ function pokemonCard(p) {
         <div class="font-semibold">${(p.weight/10).toFixed(1)}kg</div>
       </div>
     </div>
-
     <button class="mt-4 w-full rounded-xl bg-emerald-500 text-white font-semibold py-2 hover:bg-emerald-600 shadow">
       Ver Detalles 📚
     </button>
   `;
-
-  div.querySelector("button").addEventListener("click", (e) => {
-    e.stopPropagation();
-    openModal(p.id);
-  });
-  div.addEventListener("click", () => openModal(p.id));
+  div.querySelector("button").addEventListener("click", e=>{ e.stopPropagation(); openModal(p.id); });
+  div.addEventListener("click", ()=>openModal(p.id));
   return div;
 }
 
 // =================== DETAILS / MODAL ===================
-async function openModal(id) {
-  const p = cacheDetails.get(id) || await fetchPokemon(id);
+async function openModal(id){
+  const p = cacheDetails.get(id)||await fetchPokemon(id);
   ui.modalTitle.textContent = `#${String(p.id).padStart(3,'0')} ${capitalize(p.name)}`;
   ui.modalContent.innerHTML = `
     <div class="text-center mb-4">
-      <img src="${p.sprites.other?.['official-artwork']?.front_default || p.sprites.front_default}"
-           class="w-40 h-40 object-contain mx-auto" alt="${p.name}">
+      <img src="${p.sprites.other?.['official-artwork']?.front_default||p.sprites.front_default}" class="w-40 h-40 object-contain mx-auto" alt="${p.name}">
     </div>
     <div class="grid grid-cols-2 gap-3 mb-4">
       <div class="bg-amber-50 rounded-xl p-3 border border-amber-100">
@@ -310,24 +275,22 @@ async function openModal(id) {
     <div class="mb-4">
       <div class="text-sm text-slate-500 mb-1">Tipos</div>
       <div class="flex gap-2">
-        ${p.types.map(t=>`<span class="${badgeForType(t.type.name)}">${capitalize(t.type.name)}</span>`).join("")}
+        ${p.types.map(t=>`<span class="${badgeForType(t.type.name)}">${TYPES_ES[t.type.name]||capitalize(t.type.name)}</span>`).join("")}
       </div>
     </div>
     <div class="mb-1 text-sm text-slate-500">Estadísticas Base</div>
-    ${p.stats.map(s => {
+    ${p.stats.map(s=>{
       const name = s.stat.name.replace("-"," ");
       const val = s.base_stat;
       const pct = Math.min((val/200)*100,100);
-      return `
-        <div class="mb-2">
-          <div class="flex justify-between text-sm">
-            <span class="capitalize">${name}</span><span>${val}</span>
-          </div>
-          <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div class="h-2 bg-sky-500" style="width:${pct}%"></div>
-          </div>
+      return `<div class="mb-2">
+        <div class="flex justify-between text-sm">
+          <span class="capitalize">${name}</span><span>${val}</span>
         </div>
-      `;
+        <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div class="h-2 bg-sky-500" style="width:${pct}%"></div>
+        </div>
+      </div>`;
     }).join("")}
   `;
   ui.modal.classList.remove("hidden");
@@ -336,68 +299,59 @@ async function openModal(id) {
 
 ui.closeModal.addEventListener("click", closeModal);
 ui.modal.addEventListener("click", (e)=>{ if(e.target===ui.modal) closeModal(); });
-function closeModal(){
-  ui.modal.classList.add("hidden");
-  ui.modal.classList.remove("flex");
-}
+function closeModal(){ ui.modal.classList.add("hidden"); ui.modal.classList.remove("flex"); }
 
 // =================== DATA FETCH HELPERS ===================
 async function ensureDetailsFor(ids){
-  const missing = ids.filter(id => !cacheDetails.has(id));
-  // fetch en lotes de 20 para no saturar
-  for (let i=0; i<missing.length; i+=20) {
-    const chunk = missing.slice(i, i+20);
-    const results = await Promise.all(chunk.map(id => fetchPokemon(id)));
-    results.forEach(p => { if (p) cacheDetails.set(p.id, p); });
+  const missing = ids.filter(id=>!cacheDetails.has(id));
+  for(let i=0;i<missing.length;i+=20){
+    const chunk = missing.slice(i,i+20);
+    const results = await Promise.all(chunk.map(id=>fetchPokemon(id)));
+    results.forEach(p=>{ if(p) cacheDetails.set(p.id,p); });
   }
 }
 
 async function fetchPokemon(id){
   try{
     const data = await fetch(`${API}/pokemon/${id}`).then(r=>r.json());
-    cacheDetails.set(id, data);
+    cacheDetails.set(id,data);
     return data;
   }catch(e){ console.error("Error fetch pokemon", id, e); return null; }
 }
 
 // =================== EVENTS ===================
 function attachEvents(){
-  // búsqueda con debouncing
   let t;
-  ui.search.addEventListener("input", (e)=>{
+  ui.search.addEventListener("input", e=>{
     clearTimeout(t);
-    t = setTimeout(()=>{
-      state.search = e.target.value;
+    t=setTimeout(()=>{
+      state.search=e.target.value;
       applyFilters();
-    }, 300);
+    },300);
   });
 
-  ui.gen.addEventListener("change", (e)=>{
-    state.gen = e.target.value;
+  ui.gen.addEventListener("change", e=>{
+    state.gen=e.target.value;
     applyFilters();
   });
 
-  ui.sort.addEventListener("change", (e)=>{
-    state.sort = e.target.value;
+  ui.sort.addEventListener("change", e=>{
+    state.sort=e.target.value;
     applyFilters();
   });
 
   ui.clear.addEventListener("click", ()=>{
-    ui.search.value = "";
-    ui.gen.value = "";
-    ui.sort.value = "id";
-    state.search = ""; state.gen = ""; state.sort = "id"; state.type = "";
-    ui.typeBox.querySelectorAll("button").forEach(b=>{
-      b.classList.remove("border-blue-400","bg-blue-50","text-blue-700");
-    });
+    ui.search.value=""; ui.gen.value=""; ui.sort.value="id";
+    state.search=""; state.gen=""; state.sort="id"; state.type="";
+    ui.typeBox.querySelectorAll("button").forEach(b=>b.classList.remove("border-blue-400","bg-blue-50","text-blue-700"));
     applyFilters();
   });
 
   ui.prev.addEventListener("click", ()=>{
-    if (currentPage>1){ currentPage--; renderPage(); }
+    if(currentPage>1){ currentPage--; renderPage(); }
   });
   ui.next.addEventListener("click", ()=>{
-    const totalPages = Math.max(1, Math.ceil(filteredList.length / PER_PAGE));
-    if (currentPage<totalPages){ currentPage++; renderPage(); }
+    const totalPages=Math.max(1,Math.ceil(filteredList.length/PER_PAGE));
+    if(currentPage<totalPages){ currentPage++; renderPage(); }
   });
 }
