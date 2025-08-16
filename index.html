@@ -1,101 +1,178 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wiki Pokémon Avanzada</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PokéDex Alola — Taller Avanzado</title>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light; }
+    html, body { font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    /* scrollbar suave */
+    ::-webkit-scrollbar { height: 10px; width: 10px; }
+    ::-webkit-scrollbar-thumb { background: #c7c9d1; border-radius: 999px; }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-blue-600 text-white shadow-lg">
-        <div class="container mx-auto flex justify-between items-center p-4">
-            <h1 class="text-2xl font-bold">Wiki Pokémon ⚡</h1>
+<body class="bg-gradient-to-b from-slate-100 via-slate-100 to-slate-200 min-h-screen">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-40">
+    <div class="w-full bg-gradient-to-r from-amber-400 via-sky-500 to-violet-600 shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-white/90 flex items-center justify-center shadow">
+            <span class="text-amber-500 text-xl">⚡</span>
+          </div>
+          <div>
+            <h1 class="text-white text-2xl font-extrabold tracking-tight">PokéDex Alola</h1>
+            <p class="text-white/80 text-sm -mt-0.5">Región de Sol y Luna</p>
+          </div>
+          <span class="ml-2 text-xl">🌞</span>
+          <span class="text-xl">🌙</span>
         </div>
-    </header>
 
-    <!-- Contenedor principal -->
-    <div class="flex flex-1 container mx-auto">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white shadow-lg p-4">
-            <h2 class="text-lg font-bold mb-4">Filtros</h2>
-            <input id="searchInput" type="text" placeholder="Buscar por nombre"
-                class="w-full border px-2 py-1 mb-4 rounded">
-            <div id="typeFilters" class="mb-4">
-                <h3 class="font-semibold mb-2">Por tipo</h3>
-                <!-- Botones de tipos se cargan en script.js -->
-            </div>
-            <div class="mb-4">
-                <h3 class="font-semibold mb-2">Por generación</h3>
-                <select id="generationSelect" class="w-full border px-2 py-1 rounded">
-                    <option value="">Todas</option>
-                    <option value="1">Gen 1</option>
-                    <option value="2">Gen 2</option>
-                    <option value="3">Gen 3</option>
-                    <option value="4">Gen 4</option>
-                    <option value="5">Gen 5</option>
-                    <option value="6">Gen 6</option>
-                    <option value="7">Gen 7</option>
-                </select>
-            </div>
-            <div class="mb-4">
-                <h3 class="font-semibold mb-2">Ordenar por</h3>
-                <select id="sortSelect" class="w-full border px-2 py-1 rounded">
-                    <option value="id">ID</option>
-                    <option value="name">Nombre</option>
-                    <option value="height">Altura</option>
-                    <option value="weight">Peso</option>
-                </select>
-            </div>
-            <button id="clearFilters" class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded w-full">
-                Limpiar filtros
-            </button>
-        </aside>
-
-        <!-- Contenido principal -->
-        <main class="flex-1 p-4">
-            <!-- Paginación -->
-            <div class="flex justify-center mb-6 space-x-4">
-                <button id="prevBtn" class="border border-blue-500 text-blue-500 px-4 py-2 rounded hover:bg-blue-500 hover:text-white disabled:bg-gray-200 disabled:text-gray-400">
-                    Anterior
-                </button>
-                <span id="pageInfo" class="flex items-center px-4 py-2 bg-white rounded shadow">
-                    Página 1
-                </span>
-                <button id="nextBtn" class="border border-blue-500 text-blue-500 px-4 py-2 rounded hover:bg-blue-500 hover:text-white">
-                    Siguiente
-                </button>
-            </div>
-
-            <!-- Grid de Pokémon -->
-            <div id="pokemonGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <!-- Tarjetas generadas en script.js -->
-            </div>
-
-            <!-- Loading -->
-            <div id="loading" class="text-center py-8 hidden">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <p class="mt-2 text-gray-600">Cargando Pokémon...</p>
-            </div>
-        </main>
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-blue-600 text-white text-center p-4 mt-8">
-        <p>Wiki Pokémon Avanzada - Desarrollado por Luis Fernández</p>
-    </footer>
-
-    <!-- Modal -->
-    <div id="pokemonModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-lg transform transition-all">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="modalTitle" class="text-2xl font-bold text-blue-600"></h2>
-                <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-            </div>
-            <div id="modalContent"></div>
+        <div class="flex items-center gap-3">
+          <div class="px-4 py-2 rounded-xl bg-white/15 backdrop-blur text-white shadow border border-white/10">
+            <span class="opacity-90">Total:</span>
+            <span id="totalCount" class="font-bold ml-1">0</span>
+          </div>
+          <div class="px-4 py-2 rounded-xl bg-white/15 backdrop-blur text-white shadow border border-white/10">
+            <span class="opacity-90">Página:</span>
+            <span id="currentPageBadge" class="font-bold ml-1">1</span>
+          </div>
         </div>
+      </div>
     </div>
+  </header>
 
-    <script src="script.js"></script>
+  <!-- LAYOUT -->
+  <div class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- SIDEBAR -->
+    <aside class="lg:col-span-3">
+      <!-- Buscar -->
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-slate-200/70 p-4 mb-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">🔎</span>
+          <h2 class="font-semibold text-slate-800">Buscar Pokémon</h2>
+        </div>
+        <input id="searchInput" type="text" placeholder="Buscar por nombre..."
+               class="w-full rounded-xl border border-slate-200 px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-sky-400" />
+      </div>
+
+      <!-- Filtro por Tipo -->
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-slate-200/70 p-4 mb-6">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-xl">🏷️</span>
+          <h2 class="font-semibold text-slate-800">Filtrar por Tipo</h2>
+        </div>
+        <div id="typeFilters" class="flex flex-wrap gap-2"></div>
+      </div>
+
+      <!-- Generación + Orden -->
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-slate-200/70 p-4 mb-6">
+        <div class="grid grid-cols-1 gap-4">
+          <div>
+            <label for="generationSelect" class="block text-sm font-semibold text-slate-700 mb-1">Generación</label>
+            <select id="generationSelect" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400">
+              <option value="">Todas</option>
+              <option value="1">Gen 1 — Kanto (1–151)</option>
+              <option value="2">Gen 2 — Johto (152–251)</option>
+              <option value="3">Gen 3 — Hoenn (252–386)</option>
+              <option value="4">Gen 4 — Sinnoh (387–493)</option>
+              <option value="5">Gen 5 — Unova (494–649)</option>
+              <option value="6">Gen 6 — Kalos (650–721)</option>
+              <option value="7">Gen 7 — Alola (722–809)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="sortSelect" class="block text-sm font-semibold text-slate-700 mb-1">Ordenar por</label>
+            <select id="sortSelect" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-400">
+              <option value="id">ID</option>
+              <option value="name">Nombre (A–Z)</option>
+              <option value="height">Altura</option>
+              <option value="weight">Peso</option>
+            </select>
+          </div>
+
+          <button id="clearFilters"
+                  class="rounded-xl border-2 border-emerald-400 text-emerald-700 font-semibold px-4 py-2 hover:bg-emerald-50 active:scale-[.98] transition shadow">
+            Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats en tiempo real -->
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-slate-200/70 p-4">
+        <h3 class="font-semibold text-slate-800 mb-2">Estadísticas</h3>
+        <ul class="space-y-1 text-sm text-slate-700">
+          <li>Resultados actuales: <span id="statResults" class="font-semibold">0</span></li>
+          <li>Tipos activos: <span id="statType" class="font-semibold">—</span></li>
+          <li>Generación: <span id="statGen" class="font-semibold">Todas</span></li>
+          <li>Orden: <span id="statOrder" class="font-semibold">ID</span></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="lg:col-span-9">
+      <!-- Paginación -->
+      <div class="flex items-center gap-3 mb-4">
+        <button id="prevBtn"
+                class="rounded-2xl border-2 border-slate-300 text-slate-700 px-4 py-2 font-semibold shadow-sm hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed">
+          ← Anterior
+        </button>
+
+        <div class="px-5 py-2 rounded-2xl bg-white shadow font-semibold text-slate-700 border border-slate-200">
+          <span id="pageInfo">Página 1</span>
+        </div>
+
+        <button id="nextBtn"
+                class="rounded-2xl border-2 border-amber-400 text-amber-700 px-4 py-2 font-semibold shadow-sm hover:bg-amber-50 active:scale-[.98]">
+          Siguiente →
+        </button>
+      </div>
+
+      <!-- Grid -->
+      <div id="pokemonGrid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+
+      <!-- Loading -->
+      <div id="loading" class="hidden mt-10 flex items-center justify-center">
+        <div class="animate-spin w-8 h-8 rounded-full border-4 border-slate-300 border-t-sky-500"></div>
+        <span class="ml-3 text-slate-600">Cargando…</span>
+      </div>
+
+      <!-- Estado vacío -->
+      <div id="emptyState" class="hidden mt-10 text-center text-slate-600">
+        <p class="text-lg">No se encontraron resultados con los filtros actuales.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-6">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-slate-200/70 p-4 flex items-center justify-between">
+        <p class="text-slate-700 text-sm">Datos de <a class="underline hover:text-sky-600" href="https://pokeapi.co" target="_blank" rel="noreferrer">PokéAPI</a></p>
+        <p class="text-slate-700 text-sm">Hecho con ❤️ — Taller Avanzado</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL -->
+  <div id="pokemonModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+    <div class="bg-white rounded-2xl w-[92%] max-w-xl shadow-xl border border-slate-200 overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-4 border-b">
+        <h3 id="modalTitle" class="text-xl font-bold text-slate-800">Detalle</h3>
+        <button id="closeModal" class="text-slate-500 text-2xl leading-none hover:text-slate-700">&times;</button>
+      </div>
+      <div id="modalContent" class="p-5"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
